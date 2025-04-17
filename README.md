@@ -37,7 +37,7 @@ This project provides a set of Python scripts to securely compress, encrypt, and
 
 The `encrypt.py` script compresses, encrypts, and generates necessary files for secure storage.
 
-#### Steps:
+#### Steps
 
 1. Place the data folder(s) you want to encrypt in the project directory.
 
@@ -54,7 +54,7 @@ The `encrypt.py` script compresses, encrypts, and generates necessary files for 
    - Generate a SHA-256 checksum for the ZIP file.
    - Commit the encrypted files to the Git repository.
 
-#### Output Files:
+#### Output Files
 
 - `data_<timestamp>.zip.enc`: Encrypted ZIP file.
 - `encrypted_aes_key_<timestamp>.bin`: Encrypted AES key.
@@ -66,7 +66,7 @@ The `encrypt.py` script compresses, encrypts, and generates necessary files for 
 
 The `decrypt.py` script decrypts and decompresses the encrypted files.
 
-#### Steps:
+#### Steps
 
 1. Ensure the following files are present in the project directory:
    - `data_<timestamp>.zip.enc`
@@ -85,7 +85,7 @@ The `decrypt.py` script decrypts and decompresses the encrypted files.
    - Verify the checksum of the decrypted ZIP file.
    - Decompress the ZIP file into the `data` folder.
 
-#### Output:
+#### Output
 
 - Decrypted data will be extracted into the `data` folder.
 
@@ -95,7 +95,7 @@ The `decrypt.py` script decrypts and decompresses the encrypted files.
 
 The `generate_keys.py` script generates a pair of RSA keys (private and public).
 
-#### Steps:
+#### Steps
 
 1. Run the script:
 
@@ -113,7 +113,7 @@ The `generate_keys.py` script generates a pair of RSA keys (private and public).
 
 The `generate_password.py` script generates a secure random password.
 
-#### Example:
+#### Example
 
 ```sh
 python generate_password.py
@@ -121,7 +121,7 @@ python generate_password.py
 
 Output:
 
-```
+```markdown
 Generated Password: Abc123!@#...
 ```
 
@@ -129,7 +129,7 @@ Generated Password: Abc123!@#...
 
 ## File Structure
 
-```
+```markdown
 .
 ├── encrypt.py               # Main script for encryption
 ├── decrypt.py               # Main script for decryption
