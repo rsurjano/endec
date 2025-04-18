@@ -19,6 +19,7 @@ The primary goal of this project is to provide a **secure and reliable mechanism
 - **Data Compression**: Compresses data folders into ZIP archives before encryption.
 - **Key Management**: Generates and securely stores RSA public/private key pairs in encrypted archives.
 - **Decryption**: Decrypts and decompresses encrypted files back into their original form.
+- **Hook Integration**: Automatically runs `hook.py` after encryption to perform additional tasks like copying files.
 - **Logging**: Detailed logs for all operations are stored in `project.log`.
 
 ---
@@ -83,7 +84,25 @@ python . 3  # Generate RSA keys
 
 ---
 
-### 2. Encrypt Data
+### 2. Hook Integration
+
+The `hook.py` script is automatically executed after the encryption process (`encrypt.py`) if it exists. It performs additional tasks, such as copying encrypted files to a destination folder specified in the `.env` file.
+
+#### Steps
+
+1. Ensure the `.env` file exists in the project directory with the following content:
+
+   ```plaintext
+   DESTINATION_FOLDER=~/path/to/destination
+   ```
+
+2. After running the encryption process, `hook.py` will:
+   - Copy files from the `vault/` directory to the destination folder.
+   - Skip files that already exist in the destination.
+
+---
+
+### 3. Encrypt Data
 
 The `encrypt.py` script compresses, encrypts, and generates necessary files for secure storage.
 
@@ -103,6 +122,7 @@ The `encrypt.py` script compresses, encrypts, and generates necessary files for 
    - Encrypt the AES key using RSA-4096.
    - Generate a SHA-256 checksum for the ZIP file.
    - Move the encrypted files to the `vault/` directory.
+   - Automatically execute `hook.py` to copy files to the destination folder.
 
 #### Output Files
 
@@ -112,7 +132,7 @@ The `encrypt.py` script compresses, encrypts, and generates necessary files for 
 
 ---
 
-### 3. Decrypt Data
+### 4. Decrypt Data
 
 The `decrypt.py` script decrypts and decompresses the encrypted files.
 
@@ -142,7 +162,7 @@ The `decrypt.py` script decrypts and decompresses the encrypted files.
 
 ---
 
-### 4. Generate RSA Keys
+### 5. Generate RSA Keys
 
 The `generate.py` script generates a pair of RSA keys (private and public) and securely stores them in an encrypted archive.
 
@@ -189,6 +209,7 @@ The `generate.py` script generates a pair of RSA keys (private and public) and s
 ├── encrypt.py                # Main script for encryption
 ├── decrypt.py                # Main script for decryption
 ├── generate.py               # Script to generate RSA keys
+├── hook.py                   # Script to copy files after encryption
 ├── logging_config.py         # Logging configuration
 ├── requirements.txt          # Python dependencies
 ├── vault/                    # Directory for encrypted files and keys

@@ -6,8 +6,10 @@ def load_env():
     """Load environment variables from .env file."""
     env_file = ".env"
     if not os.path.exists(env_file):
-        raise FileNotFoundError("Error: .env file not found. Please create one with the destination path.")
+        print("Warning: .env file not found. Skipping execution of hook.py.")
+        return False
     load_dotenv(dotenv_path=env_file)
+    return True
 
 def get_paths():
     """Get the source and destination paths."""
@@ -17,7 +19,8 @@ def get_paths():
     # Load destination folder from .env
     destination = os.getenv("DESTINATION_FOLDER")
     if not destination:
-        raise ValueError("Error: DESTINATION_FOLDER is not set in the .env file.")
+        print("Warning: DESTINATION_FOLDER is not set in the .env file. Skipping execution of hook.py.")
+        return source, None
 
     # Ensure compatibility with the current operating system
     destination = os.path.expanduser(destination)  # Expand ~ to the user's home directory
@@ -57,8 +60,13 @@ def copy_files(source_dir, destination_dir):
 def main():
     """Main function to execute the script."""
     try:
-        load_env()
+        if not load_env():
+            return  # Skip execution if .env file is missing
+
         source, destination = get_paths()
+        if not destination:
+            return  # Skip execution if DESTINATION_FOLDER is not set
+
         print(f"Source: {source}")
         print(f"Destination: {destination}")
         copy_files(source, destination)
