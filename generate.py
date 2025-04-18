@@ -69,11 +69,11 @@ class RSAKeyGenerator:
             raise ValueError("Keys have not been generated yet.")
         private_key_path = self.save_key(
             self.serialize_key(self.private_key, is_private=True, password=password),
-            f"{hint}_private_key_{date_str}.pem"
+            f"private_key_{date_str}.pem"
         )
         public_key_path = self.save_key(
             self.serialize_key(self.public_key, is_private=False),
-            f"{hint}_public_key_{date_str}.pem"
+            f"public_key_{date_str}.pem"
         )
         return private_key_path, public_key_path
 
