@@ -2,108 +2,196 @@ import os
 import re
 import logging
 import hashlib
+import getpass
 from datetime import datetime
 from encryption.aes_encryption import AESEncryption
 from encryption.rsa_encryption import RSAEncryption
-from encryption.file_operations import compress_folder, git_commit
+from encryption.file_operations import compress_folder, git_commit, decompress_folder
 from logging_config import setup_logging
+import pyzipper
 
 # Setup logging
 setup_logging()
 logger = logging.getLogger(__name__)
 
 
-def find_latest_data_folder():
-    pattern1 = re.compile(r'data_\d{2}_\d{2}_\d{4}_\d{2}_\d{2}_\d{2}')
-    pattern2 = re.compile(r'data')
-    folders = [f for f in os.listdir() if os.path.isdir(
-        f) and (pattern1.match(f) or pattern2.match(f))]
-    if not folders:
-        logger.error(
-            "No folder matching the patterns 'data' or 'data_dd_mm_yyyy_HH_MM_SS' found.")
-        raise FileNotFoundError(
-            "No folder matching the patterns 'data' or 'data_dd_mm_yyyy_HH_MM_SS' found.")
-    latest_folder = max(folders, key=os.path.getmtime)
-    logger.info(f"Latest data folder found: {latest_folder}")
-    return latest_folder
+class DataFolderManager:
+    """Handles operations related to finding and cleaning data folders."""
+
+    @staticmethod
+    def find_latest_data_folder():
+        """Find the latest data folder based on naming patterns."""
+        pattern1 = re.compile(r'data_\d{2}_\d{2}_\d{4}_\d{2}_\d{2}_\d{2}')
+        pattern2 = re.compile(r'data')
+        folders = [f for f in os.listdir() if os.path.isdir(f) and (pattern1.match(f) or pattern2.match(f))]
+        if not folders:
+            logger.error("No folder matching the patterns 'data' or 'data_dd_mm_yyyy_HH_MM_SS' found.")
+            raise FileNotFoundError("No folder matching the patterns 'data' or 'data_dd_mm_yyyy_HH_MM_SS' found.")
+        latest_folder = max(folders, key=os.path.getmtime)
+        logger.info(f"Latest data folder found: {latest_folder}")
+        return latest_folder
+
+    @staticmethod
+    def _clean_old_files(pattern, exclude_file, description):
+        """Helper method to clean up old files matching a pattern."""
+        for file in os.listdir():
+            if re.match(pattern, file) and file != exclude_file:
+                os.remove(file)
+                logger.info(f"Old {description} deleted: {file}")
+
+    @staticmethod
+    def _clean_old_folders(pattern):
+        """Helper method to clean up old folders matching a pattern."""
+        for folder in os.listdir():
+            if os.path.isdir(folder) and re.match(pattern, folder):
+                try:
+                    os.rmdir(folder)
+                    logger.info(f"Data folder deleted: {folder}")
+                except OSError:
+                    logger.warning(f"Failed to delete folder: {folder}")
 
 
-def generate_checksum(file_path):
-    sha256_hash = hashlib.sha256()
-    with open(file_path, "rb") as f:
-        for byte_block in iter(lambda: f.read(4096), b""):
-            sha256_hash.update(byte_block)
-    return sha256_hash.hexdigest()
+class FileChecksum:
+    """Handles checksum generation for files."""
+
+    @staticmethod
+    def generate_checksum(file_path):
+        """Generate a SHA-256 checksum for a file."""
+        sha256_hash = hashlib.sha256()
+        with open(file_path, "rb") as f:
+            for byte_block in iter(lambda: f.read(4096), b""):
+                sha256_hash.update(byte_block)
+        logger.info(f"Checksum generated for file: {file_path}")
+        return sha256_hash.hexdigest()
+
+def extract_pem_files(zip_path, extract_to="keys_temp"):
+    """Extract .pem files from an encrypted .zip file."""
+    os.makedirs(extract_to, exist_ok=True)
+    while True:
+        try:
+            password = getpass.getpass("Enter the password to decrypt the .zip file containing the .pem keys: ")
+            if not password:
+                logger.error("Password cannot be empty. Exiting.")
+                print("Password cannot be empty. Exiting.")
+                return False
+            logger.info(f"Attempting to extract .pem files from '{zip_path}'...")
+            with pyzipper.AESZipFile(zip_path, 'r') as zip_ref:
+                zip_ref.pwd = password.encode()
+                zip_ref.extractall(extract_to)
+            logger.info(f".pem files successfully extracted to '{extract_to}'.")
+            return True
+        except (RuntimeError, pyzipper.BadZipFile) as e:
+            logger.error(f"Failed to extract .pem files: {e}")
+            print("Incorrect password or extraction error. Please try again.")
+        except Exception as e:
+            logger.error(f"An unexpected error occurred: {e}")
+            print("An unexpected error occurred. Please try again.")
+
+def cleanup_pem_files(extract_to="keys_temp"):
+    """Remove only extracted .pem files, leaving the directory intact."""
+    logger.info(f"Cleaning up extracted .pem files in '{extract_to}'...")
+    for file in os.listdir(extract_to):
+        file_path = os.path.join(extract_to, file)
+        if os.path.isfile(file_path) and file.endswith(".pem"):
+            os.remove(file_path)
+            logger.debug(f"Deleted file: {file_path}")
+    logger.info("Cleanup of .pem files completed.")
+
+def find_latest_zip_file(directory="keys", pattern=r'keys_\d{2}_\d{2}_\d{4}_\d{2}_\d{2}_\d{2}\.zip'):
+    """Find the latest .zip file in the specified directory based on the timestamp in the filename."""
+    zip_files = [f for f in os.listdir(directory) if re.match(pattern, f)]
+    if not zip_files:
+        logger.error("No .zip files matching the pattern found in the directory.")
+        raise FileNotFoundError("No .zip files matching the pattern found in the directory.")
+    latest_zip = max(zip_files, key=lambda f: os.path.getmtime(os.path.join(directory, f)))
+    logger.info(f"Latest .zip file found: {latest_zip}")
+    return os.path.join(directory, latest_zip)
+
+def find_latest_pem_date_str(directory="keys", pattern=r'(private_key|public_key)_(\d{2}_\d{2}_\d{4}_\d{2}_\d{2}_\d{2})\.pem'):
+    """Find the latest date_str from .pem files in the specified directory."""
+    pem_files = [f for f in os.listdir(directory) if re.match(pattern, f)]
+    if not pem_files:
+        logger.error("No .pem files matching the pattern found in the directory.")
+        raise FileNotFoundError("No .pem files matching the pattern found in the directory.")
+    latest_pem = max(pem_files, key=lambda f: os.path.getmtime(os.path.join(directory, f)))
+    date_str = re.search(pattern, latest_pem).group(2)
+    logger.info(f"Latest .pem file date_str found: {date_str}")
+    return date_str
+
 
 
 def main():
     try:
-        folder_path = find_latest_data_folder()
-    except FileNotFoundError as e:
-        logger.error(f"Error finding the latest data folder: {e}")
-        return
+        # Find the latest .zip file generated by generate.py
+        zip_path = find_latest_zip_file()
+        extract_to = "keys"
 
-    date_str = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
-    compressed_file = f'data_{date_str}.zip'
-    aes_key = AESEncryption.generate_key()  # Generate AES key
-    iv = AESEncryption.generate_iv()        # Generate initialization vector
+        # Extract .pem files from the encrypted .zip file
+        if not extract_pem_files(zip_path, extract_to):
+            return
 
-    logger.info(f"Compressing folder: {folder_path}")
-    compress_folder(folder_path, compressed_file[:-4], compression='store')
-    logger.info(f"Folder compressed into: {compressed_file}")
+        # Find the latest date_str from the extracted .pem files
+        date_str = find_latest_pem_date_str(extract_to)
 
-    # Generate checksum for the original ZIP file
-    checksum = generate_checksum(compressed_file)
-    with open(f'checksum_{date_str}.sha256', 'w') as f:
-        f.write(checksum)
-    logger.info(
-        f"Checksum generated and stored in: checksum_{date_str}.sha256")
+        # Initialize RSA encryption with the extracted .pem files
+        rsa_encryption = RSAEncryption(
+            private_key_path=f"{extract_to}/private_key_{date_str}.pem",
+            public_key_path=f"{extract_to}/public_key_{date_str}.pem",
+            private_key_password=getpass.getpass("Enter the password for the private key: ")
+        )
 
-    rsa_encryption = RSAEncryption()
-    encrypted_aes_key = rsa_encryption.encrypt_key(aes_key)
+        # Find the latest data folder
+        folder_path = DataFolderManager.find_latest_data_folder()
 
-    with open(f'encrypted_aes_key_{date_str}.bin', 'wb') as f:
-        f.write(encrypted_aes_key)
-    logger.info(
-        f"Encrypted AES key stored in: encrypted_aes_key_{date_str}.bin")
+        # Generate a timestamp for file naming
+        compressed_file = f'data_{date_str}.zip'
 
-    AESEncryption.encrypt_file(compressed_file, aes_key, iv)
-    logger.info(f"Compressed file encrypted into: {compressed_file}.enc")
+        # Generate AES key and IV
+        aes_key = AESEncryption.generate_key()
+        iv = AESEncryption.generate_iv()
 
-    # Delete the original ZIP file
-    os.remove(compressed_file)
-    logger.info(f"Original ZIP file deleted: {compressed_file}")
+        # Compress the folder
+        logger.info(f"Compressing folder: {folder_path}")
+        compress_folder(folder_path, compressed_file[:-4], compression='store')
+        logger.info(f"Folder compressed into: {compressed_file}")
 
-    # Clean up older files
-    for file in os.listdir():
-        # Delete older encrypted AES key files
-        if re.match(r'encrypted_aes_key_\d{2}_\d{2}_\d{4}_\d{2}_\d{2}_\d{2}\.bin', file) and file != f'encrypted_aes_key_{date_str}.bin':
-            os.remove(file)
-            logger.info(f"Old encrypted AES key file deleted: {file}")
+        # Generate checksum for the compressed file
+        checksum = FileChecksum.generate_checksum(compressed_file)
+        checksum_file = f'checksum_{date_str}.sha256'
+        with open(checksum_file, 'w') as f:
+            f.write(checksum)
+        logger.info(f"Checksum stored in: {checksum_file}")
 
-        # Delete older .zip.enc files
-        if re.match(r'data_\d{2}_\d{2}_\d{4}_\d{2}_\d{2}_\d{2}\.zip\.enc', file) and file != f'data_{date_str}.zip.enc':
-            os.remove(file)
-            logger.info(f"Old encrypted .zip.enc file deleted: {file}")
+        # Encrypt the AES key using RSA
+        encrypted_aes_key = rsa_encryption.encrypt_key(aes_key)
+        encrypted_key_file = f'encrypted_aes_key_{date_str}.bin'
+        with open(encrypted_key_file, 'wb') as f:
+            f.write(encrypted_aes_key)
+        logger.info(f"Encrypted AES key stored in: {encrypted_key_file}")
 
-        # Delete older checksum files
-        if re.match(r'checksum_\d{2}_\d{2}_\d{4}_\d{2}_\d{2}_\d{2}\.sha256', file) and file != f'checksum_{date_str}.sha256':
-            os.remove(file)
-            logger.info(f"Old checksum file deleted: {file}")
+        # Encrypt the compressed file using AES
+        AESEncryption.encrypt_file(compressed_file, aes_key, iv)
+        encrypted_file = f'{compressed_file}.enc'
+        logger.info(f"Compressed file encrypted into: {encrypted_file}")
 
-    # Delete all data* folders
-    for folder in os.listdir():
-        if os.path.isdir(folder) and re.match(r'data(_\d{2}_\d{2}_\d{4}_\d{2}_\d{2}_\d{2})?', folder):
-            try:
-                os.rmdir(folder)
-                logger.info(f"Data folder deleted: {folder}")
-            except OSError:
-                logger.warning(f"Failed to delete folder: {folder}")
+        # Delete the original compressed file
+        os.remove(compressed_file)
+        logger.info(f"Original compressed file deleted: {compressed_file}")
 
-    git_commit(compressed_file + '.enc', date_str)
-    git_commit(f'encrypted_aes_key_{date_str}.bin', date_str)
-    git_commit(f'checksum_{date_str}.sha256', date_str)
-    logger.info("All files committed to Git successfully.")
+
+        # Commit files to Git
+        # git_commit(encrypted_file, date_str)
+        # git_commit(encrypted_key_file, date_str)
+        # git_commit(checksum_file, date_str)
+        # logger.info("All files committed to Git successfully.")
+
+    except Exception as e:
+        logger.exception("An error occurred during the encryption process.")
+        print(f"An error occurred: {e}")
+
+    finally:
+        # Cleanup extracted .pem files
+        cleanup_pem_files(extract_to)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,5 @@
 import shutil
+import zipfile
 import subprocess
 
 
@@ -9,8 +10,12 @@ def compress_folder(folder_path, output_path, compression='zip'):
         shutil.make_archive(output_path, compression, folder_path)
 
 
-def decompress_folder(zip_path, extract_path):
-    shutil.unpack_archive(zip_path, extract_path, 'zip')
+def decompress_folder(zip_path, extract_path, password=None):
+    """Decompress a .zip file, optionally using a password."""
+    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        if password:
+            zip_ref.setpassword(password.encode())
+        zip_ref.extractall(extract_path)
 
 
 def git_commit(file_path, date_str):
