@@ -141,3 +141,5 @@ data*/
 *.sha256
 *.zip.enc
 *.bin
+
+data-encrypted/
