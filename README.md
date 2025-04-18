@@ -37,11 +37,11 @@ The primary goal of this project is to provide a **secure and reliable mechanism
 
 ## Usage
 
-### 1. Unified CLI Interface
+### Unified CLI Interface
 
 The `__main__.py` script provides a unified CLI to run encryption, decryption, and key generation tasks.
 
-#### Steps
+#### How to Run
 
 1. Run the script without arguments to see the options:
 
@@ -54,7 +54,7 @@ The `__main__.py` script provides a unified CLI to run encryption, decryption, a
    - `2` or `decrypt`: Run the decryption script.
    - `3` or `generate`: Run the RSA key generation script.
 
-#### Example
+#### Examples
 
 To encrypt data:
 
@@ -84,11 +84,11 @@ python . 3  # Generate RSA keys
 
 ---
 
-### 2. Hook Integration
+### Hook Integration
 
 The `hook.py` script is automatically executed after the encryption process (`encrypt.py`) if it exists. It performs additional tasks, such as copying encrypted files to a destination folder specified in the `.env` file.
 
-#### Steps
+#### Configuration for Hook
 
 1. Ensure the `.env` file exists in the project directory with the following content:
 
@@ -102,11 +102,11 @@ The `hook.py` script is automatically executed after the encryption process (`en
 
 ---
 
-### 3. Encrypt Data
+### Encryption Workflow
 
 The `encrypt.py` script compresses, encrypts, and generates necessary files for secure storage.
 
-#### Steps
+#### Steps for Encryption
 
 1. Place the data folder(s) you want to encrypt in the `data/` directory.
 
@@ -124,7 +124,7 @@ The `encrypt.py` script compresses, encrypts, and generates necessary files for 
    - Move the encrypted files to the `vault/` directory.
    - Automatically execute `hook.py` to copy files to the destination folder.
 
-#### Output Files
+#### Encryption Output Files
 
 - `vault/data_<timestamp>.zip.enc`: Encrypted ZIP file.
 - `vault/encrypted_aes_key_<timestamp>.bin`: Encrypted AES key.
@@ -132,11 +132,11 @@ The `encrypt.py` script compresses, encrypts, and generates necessary files for 
 
 ---
 
-### 4. Decrypt Data
+### Decryption Workflow
 
 The `decrypt.py` script decrypts and decompresses the encrypted files.
 
-#### Steps
+#### Steps for Decryption
 
 1. Ensure the following files are present in the `vault/` directory:
    - `data_<timestamp>.zip.enc`
@@ -156,17 +156,17 @@ The `decrypt.py` script decrypts and decompresses the encrypted files.
    - Verify the checksum of the decrypted ZIP file.
    - Decompress the ZIP file into the `data/` directory.
 
-#### Output
+#### Decryption Output
 
 - Decrypted data will be extracted into a folder named `data_<timestamp>`.
 
 ---
 
-### 5. Generate RSA Keys
+### RSA Key Generation
 
 The `generate.py` script generates a pair of RSA keys (private and public) and securely stores them in an encrypted archive.
 
-#### Steps
+#### Steps for Key Generation
 
 1. Run the script via the CLI:
 
@@ -179,7 +179,7 @@ The `generate.py` script generates a pair of RSA keys (private and public) and s
    - Prompt for a password to encrypt the private key and archive.
    - Save the keys in an encrypted ZIP file in the `vault/` directory.
 
-#### Output Files
+#### Key Generation Output Files
 
 - `<hint>_keys_<timestamp>.zip`: Encrypted archive containing the RSA keys.
 
@@ -187,23 +187,23 @@ The `generate.py` script generates a pair of RSA keys (private and public) and s
 
 ## Real Use Cases
 
-### 1. **Secure Backup of Sensitive Data**
+1. **Secure Backup of Sensitive Data**:
    - Use this project to encrypt and securely store backups of sensitive files, such as financial records, legal documents, or intellectual property.
 
-### 2. **Data Sharing in High-Security Environments**
+2. **Data Sharing in High-Security Environments**:
    - Share encrypted data with collaborators by providing them with the encrypted AES key and the public RSA key.
 
-### 3. **Long-Term Archival**
+3. **Long-Term Archival**:
    - Protect critical data archives for long-term storage, ensuring they remain secure even if accessed years later.
 
-### 4. **Compliance with Data Protection Regulations**
+4. **Compliance with Data Protection Regulations**:
    - Use strong encryption to comply with regulations like GDPR, HIPAA, or PCI DSS for protecting sensitive data.
 
 ---
 
 ## File Structure
 
-```markdown
+```plaintext
 .
 ├── __main__.py               # Unified CLI for encryption, decryption, and key generation
 ├── encrypt.py                # Main script for encryption
