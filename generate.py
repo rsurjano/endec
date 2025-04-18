@@ -135,6 +135,12 @@ def main():
             password
         )
 
+        # Create a hint file
+        hint_file_path = os.path.join(key_generator.output_dir, f"hint_{date_str}")
+        with open(hint_file_path, 'w') as hint_file:
+            hint_file.write("")  # Empty file
+        logger.info(f"Hint file created: {hint_file_path}")
+
         # Cleanup PEM files
         secure_storage.cleanup_files([private_key_path, public_key_path])
 
