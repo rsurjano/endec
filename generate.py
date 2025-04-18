@@ -108,6 +108,21 @@ class SecureKeyStorage:
                 os.remove(file)
         logger.info("Cleanup completed.")
 
+def prompt_password():
+    """Prompt the user to enter and confirm a password."""
+    while True:
+        password = getpass.getpass("Enter a password to secure your keys: ")
+        if not password:
+            logger.error("Password cannot be empty. Please try again.")
+            print("Password cannot be empty. Please try again.")
+            continue
+
+        confirm_password = getpass.getpass("Confirm your password: ")
+        if password != confirm_password:
+            logger.error("Passwords do not match. Please try again.")
+            print("Passwords do not match. Please try again.")
+        else:
+            return password
 
 def main():
     """Main function to generate, save, and securely store RSA keys."""
@@ -116,11 +131,7 @@ def main():
         date_str = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
 
         # Prompt user for a password to encrypt the private key and archive
-        password = getpass.getpass("Enter a password to secure your keys: ")
-        if not password:
-            logger.error("Password cannot be empty. Exiting.")
-            print("Password cannot be empty. Exiting.")
-            return
+        password = prompt_password()
 
         # Prompt user for a hint to describe the keys
         hint = input("Enter a hint to describe the purpose of these keys: ").strip().replace(" ", "_")
