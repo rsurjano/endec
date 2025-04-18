@@ -2,9 +2,9 @@ import os
 import re
 import logging
 import hashlib
-from encryption.aes_encryption import AESEncryption
-from encryption.rsa_encryption import RSAEncryption
-from encryption.file_operations import decompress_folder
+from utils.aes_encryption import AESEncryption
+from utils.rsa_encryption import RSAEncryption
+from utils.file_operations import decompress_folder
 from logging_config import setup_logging
 
 # Setup logging

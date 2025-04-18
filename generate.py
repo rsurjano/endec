@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class RSAKeyGenerator:
     """Class to handle RSA key generation and storage."""
 
-    def __init__(self, key_size=4096, output_dir="keys"):
+    def __init__(self, key_size=4096, output_dir="vault"):
         self.key_size = key_size
         self.output_dir = output_dir
         self.private_key = None
@@ -62,18 +62,18 @@ class RSAKeyGenerator:
         logger.info(f"Key saved to '{file_path}'.")
         return file_path
 
-    def save_keys(self, password, date_str):
+    def save_keys(self, password, date_str, hint):
         """Save both private and public keys to files."""
         if not self.private_key or not self.public_key:
             logger.error("Keys have not been generated yet.")
             raise ValueError("Keys have not been generated yet.")
         private_key_path = self.save_key(
             self.serialize_key(self.private_key, is_private=True, password=password),
-            f"private_key_{date_str}.pem"
+            f"{hint}_private_key_{date_str}.pem"
         )
         public_key_path = self.save_key(
             self.serialize_key(self.public_key, is_private=False),
-            f"public_key_{date_str}.pem"
+            f"{hint}_public_key_{date_str}.pem"
         )
         return private_key_path, public_key_path
 
@@ -81,7 +81,7 @@ class RSAKeyGenerator:
 class SecureKeyStorage:
     """Class to handle secure storage of keys in an encrypted compressed file."""
 
-    def __init__(self, output_dir="keys", archive_name=None):
+    def __init__(self, output_dir="vault", archive_name=None):
         self.output_dir = output_dir
         self.archive_name = archive_name
         logger.debug(f"Initialized SecureKeyStorage with output_dir='{output_dir}', archive_name='{archive_name}'")
@@ -122,24 +122,24 @@ def main():
             print("Password cannot be empty. Exiting.")
             return
 
+        # Prompt user for a hint to describe the keys
+        hint = input("Enter a hint to describe the purpose of these keys: ").strip().replace(" ", "_")
+        if not hint:
+            logger.warning("Hint is empty. Proceeding without a meaningful description.")
+            hint = "default"
+
         # Generate RSA keys
         key_generator = RSAKeyGenerator()
         key_generator.generate_keys()
-        private_key_path, public_key_path = key_generator.save_keys(password, date_str)
+        private_key_path, public_key_path = key_generator.save_keys(password, date_str, hint)
 
         # Securely store keys in an encrypted compressed file
-        archive_name = f"keys_{date_str}.zip"
+        archive_name = f"{hint}_keys_{date_str}.zip"
         secure_storage = SecureKeyStorage(archive_name=archive_name)
         archive_path = secure_storage.compress_and_encrypt(
             [private_key_path, public_key_path],
             password
         )
-
-        # Create a hint file
-        hint_file_path = os.path.join(key_generator.output_dir, f"hint_{date_str}")
-        with open(hint_file_path, 'w') as hint_file:
-            hint_file.write("")  # Empty file
-        logger.info(f"Hint file created: {hint_file_path}")
 
         # Cleanup PEM files
         secure_storage.cleanup_files([private_key_path, public_key_path])

@@ -142,4 +142,6 @@ data*/
 *.zip.enc
 *.bin
 
-data-encrypted/
+vault/
+
+*DS_Store
