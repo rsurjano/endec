@@ -1,0 +1,50 @@
+{
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Encrypt Data",
+      "type": "shell",
+      "command": "/bin/zsh",
+      "args": [
+        "-c",
+        "source ${workspaceFolder}/.venv/bin/activate && python ${workspaceFolder}/__main__.py encrypt"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Decrypt Data",
+      "type": "shell",
+      "command": "/bin/zsh",
+      "args": [
+        "-c",
+        "source ${workspaceFolder}/.venv/bin/activate && python ${workspaceFolder}/__main__.py decrypt"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "Generate Keys",
+      "type": "shell",
+      "command": "/bin/zsh",
+      "args": [
+        "-c",
+        "source ${workspaceFolder}/.venv/bin/activate && python ${workspaceFolder}/__main__.py generate"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "Run Main Script",
+      "type": "shell",
+      "command": "/bin/zsh",
+      "args": [
+        "-c",
+        "source ${workspaceFolder}/.venv/bin/activate && python ${workspaceFolder}/__main__.py"
+      ],
+      "group": "build"
+    }
+  ]
+}
