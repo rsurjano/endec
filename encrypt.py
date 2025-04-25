@@ -30,6 +30,7 @@ from utils.rsa_encryption import RSAEncryption
 from utils.file_operations import compress_folder, git_commit, decompress_folder
 from logging_config import setup_logging
 import pyzipper
+import sys
 
 # Setup logging
 setup_logging()
@@ -167,7 +168,7 @@ class FolderChecksum:
         current_checksum = FolderChecksum.generate_folder_checksum(folder_path)
         return stored_checksum == current_checksum
 
-def find_latest_hash_file(directory="vault", pattern=r'data_.*_hash_\d{2}_\d{2}_\d{4}_\d{2}_\d{2}_\d{2}\.md5'):
+def find_latest_hash_file(directory="vault", pattern=r'\d{2}_\d{2}_\d{4}_\d{2}_\d{2}_\d{2}_data_hash\.md5'):
     """Find the latest hash file in the specified directory based on the timestamp in the filename."""
     hash_files = [f for f in os.listdir(directory) if re.match(pattern, f)]
     if not hash_files:
@@ -194,7 +195,7 @@ def main():
             if FolderChecksum.validate_folder_checksum(folder_path, latest_hash_file):
                 logger.info("Folder checksum matches the stored hash. No changes detected. Exiting script.")
                 print("No changes detected in the folder. Exiting script.")
-                return
+                sys.exit(0)  # Exit the script cleanly
             else:
                 logger.info("Folder checksum mismatch. Proceeding with encryption...")
         else:
@@ -274,7 +275,7 @@ def main():
 
     finally:
         # Cleanup extracted .pem files
-        cleanup_pem_files(extract_to)
+        cleanup_pem_files()
 
 
 if __name__ == "__main__":
