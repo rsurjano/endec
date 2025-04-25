@@ -142,10 +142,55 @@ def find_latest_pem_date_str(directory="vault", pattern=r'(private_key|public_ke
     date_str = re.search(pattern, latest_pem).group(2)
     logger.info(f"Latest .pem file date_str found: {date_str}")
     return date_str
+class FolderChecksum:
 
+    """Handles checksum generation and validation for folders."""
+
+    @staticmethod
+    def generate_folder_checksum(folder_path):
+        """Generate an MD5 checksum for the contents of a folder."""
+        md5_hash = hashlib.md5()
+        for root, dirs, files in os.walk(folder_path):
+            for file in sorted(files):  # Sort files to ensure consistent hash
+                file_path = os.path.join(root, file)
+                with open(file_path, "rb") as f:
+                    for byte_block in iter(lambda: f.read(4096), b""):
+                        md5_hash.update(byte_block)
+        logger.info(f"Checksum generated for folder: {folder_path}")
+        return md5_hash.hexdigest()
+
+    @staticmethod
+    def validate_folder_checksum(folder_path, checksum_file):
+        """Validate the folder checksum against the checksum stored in a file."""
+        with open(checksum_file, "r") as f:
+            stored_checksum = f.read().strip()
+        current_checksum = FolderChecksum.generate_folder_checksum(folder_path)
+        return stored_checksum == current_checksum
 
 def main():
     try:
+        # Find the latest data folder
+        folder_path = DataFolderManager.find_latest_data_folder()
+
+        # Generate the hash file name based on the folder name
+        folder_hash_file = f"{folder_path}_hash.md5"
+
+        # Check if the hash file exists
+        if os.path.exists(folder_hash_file):
+            logger.info(f"Hash file found: {folder_hash_file}. Validating folder checksum...")
+            if FolderChecksum.validate_folder_checksum(folder_path, folder_hash_file):
+                logger.info("Folder checksum matches the stored hash. No changes detected. Exiting script.")
+                print("No changes detected in the folder. Exiting script.")
+                return
+            else:
+                logger.info("Folder checksum mismatch. Proceeding with encryption...")
+        else:
+            logger.info(f"No hash file found for folder: {folder_path}. Generating hash file...")
+            folder_checksum = FolderChecksum.generate_folder_checksum(folder_path)
+            with open(folder_hash_file, "w") as f:
+                f.write(folder_checksum)
+            logger.info(f"Hash file generated and stored: {folder_hash_file}")
+
         # Prompt for the password once
         password = getpass.getpass("Enter the password for the .zip file and private key: ")
 

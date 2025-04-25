@@ -43,6 +43,26 @@ def run_script(script_name, *args):
     except Exception as e:
         print(f"An unexpected error occurred while running '{script_name}': {e}")
 
+def check_staged_changes():
+    """Check if there are staged changes in the Git repository."""
+    try:
+        result = subprocess.run(
+            ["git", "diff", "--cached", "--name-only"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=True
+        )
+        staged_files = result.stdout.strip()
+        if staged_files:
+            print("Error: There are staged changes in the repository. Please commit or unstage them before proceeding.")
+            print("Staged changes:")
+            print(staged_files)
+            sys.exit(1)
+    except subprocess.CalledProcessError as e:
+        print(f"Error: Failed to check for staged changes. Exit code: {e.returncode}.")
+        sys.exit(1)
+
 def pull_latest_changes():
     """Pull the latest changes from the remote repository."""
     try:
@@ -84,6 +104,10 @@ def get_command_from_input():
     return options.get(choice)
 
 def main():
+    """Main entry point for the CLI."""
+    # Check for staged changes
+    check_staged_changes()
+
     """Main entry point for the CLI."""
     parser = argparse.ArgumentParser(
         description="CLI for encryption, decryption, and RSA key generation."
