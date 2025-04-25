@@ -204,7 +204,7 @@ def main():
         encrypt_date_str = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
 
         # Generate a new hash file and store it in the vault
-        folder_hash_file = os.path.join(vault_dir, f"{folder_path}_hash_{encrypt_date_str}.md5")
+        folder_hash_file = os.path.join(vault_dir, f"{encrypt_date_str}_{folder_path}_hash.md5")
         folder_checksum = FolderChecksum.generate_folder_checksum(folder_path)
         with open(folder_hash_file, "w") as f:
             f.write(folder_checksum)
@@ -234,7 +234,7 @@ def main():
         )
 
         # Generate a compressed file name based on the encryption timestamp
-        compressed_file = os.path.join(vault_dir, f'data_{encrypt_date_str}.zip')
+        compressed_file = os.path.join(vault_dir, f'{encrypt_date_str}_data.zip')
 
         # Generate AES key and IV
         aes_key = AESEncryption.generate_key()
@@ -247,20 +247,20 @@ def main():
 
         # Generate checksum for the compressed file
         checksum = FileChecksum.generate_checksum(compressed_file)
-        checksum_file = os.path.join(vault_dir, f'checksum_{encrypt_date_str}.sha256')
+        checksum_file = os.path.join(vault_dir, f'{encrypt_date_str}_checksum.sha256')
         with open(checksum_file, 'w') as f:
             f.write(checksum)
         logger.info(f"Checksum stored in: {checksum_file}")
 
         # Encrypt the AES key using RSA
         encrypted_aes_key = rsa_encryption.encrypt_key(aes_key)
-        encrypted_key_file = os.path.join(vault_dir, f'encrypted_aes_key_{encrypt_date_str}.bin')
+        encrypted_key_file = os.path.join(vault_dir, f'{encrypt_date_str}_encrypted_aes_key.bin')
         with open(encrypted_key_file, 'wb') as f:
             f.write(encrypted_aes_key)
         logger.info(f"Encrypted AES key stored in: {encrypted_key_file}")
 
         # Encrypt the compressed file using AES
-        encrypted_file = os.path.join(vault_dir, f'data_{encrypt_date_str}.zip.enc')
+        encrypted_file = os.path.join(vault_dir, f'{encrypt_date_str}_data.zip.enc')
         AESEncryption.encrypt_file(compressed_file, aes_key, iv)
         logger.info(f"Compressed file encrypted into: {encrypted_file}")
 

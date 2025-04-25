@@ -64,105 +64,95 @@ def find_latest_file(directory, pattern):
 
 
 def decrypt():
-      try:
-        # Encuentra el archivo de datos más reciente (data_)
+    try:
+        # Generate a timestamp for file naming
+        decrypt_date_str = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
+
+        # Find the latest encrypted data file
         data_pattern = r'data_\d{2}_\d{2}_\d{4}_\d{2}_\d{2}_\d{2}\.zip\.enc'
         encrypted_file = find_latest_file("vault", data_pattern)
-        logger.info(f"Archivo de datos más reciente identificado: {encrypted_file}")
+        logger.info(f"Latest encrypted data file identified: {encrypted_file}")
 
-        # Extrae el string de fecha del nombre del archivo de datos
+        # Extract the date string from the data file name
         data_date_str = re.search(r'data_(\d{2}_\d{2}_\d{4}_\d{2}_\d{2}_\d{2})', encrypted_file).group(1)
 
-        # Encuentra el archivo de claves más reciente ({hint}_keys_)
+        # Find the latest keys file
         keys_pattern = r'.*_keys_\d{2}_\d{2}_\d{4}_\d{2}_\d{2}_\d{2}\.zip'
         keys_zip_file = find_latest_file("vault", keys_pattern)
-        logger.info(f"Archivo de claves más reciente identificado: {keys_zip_file}")
+        logger.info(f"Latest keys file identified: {keys_zip_file}")
 
-        # Extrae el string de fecha del nombre del archivo de claves
+        # Extract the date string from the keys file name
         keys_date_str = re.search(r'keys_(\d{2}_\d{2}_\d{4}_\d{2}_\d{2}_\d{2})', keys_zip_file).group(1)
 
-        # Define las rutas relacionadas
-        encrypted_key_file = os.path.join("vault", f'encrypted_aes_key_{data_date_str}.bin')
-        checksum_file = os.path.join("vault", f'checksum_{data_date_str}.sha256')
+        # Define related paths
+        encrypted_key_file = os.path.join("vault", f'{decrypt_date_str}_encrypted_aes_key_{data_date_str}.bin')
+        checksum_file = os.path.join("vault", f'{decrypt_date_str}_checksum_{data_date_str}.sha256')
 
-        # Solicita la contraseña para descifrar la clave privada
-        password = input("Introduce la contraseña para la clave privada: ").strip()
+        # Prompt for the password to decrypt the private key
+        password = input("Enter the password for the private key: ").strip()
 
-        # Valida y descomprime el archivo zip de claves para extraer las claves privadas y públicas
+        # Validate and extract keys from the zip file
         if not extract_pem_files(keys_zip_file, "vault", password):
-            logger.error("No se pudieron extraer las claves del archivo zip. Saliendo.")
+            logger.error("Failed to extract keys from the zip file. Exiting.")
             return
-        logger.info("Claves extraídas exitosamente en el directorio 'vault'.")
+        logger.info("Keys successfully extracted to the 'vault' directory.")
 
-        # Define las rutas de las claves privadas y públicas
+        # Define private and public key paths
         private_key_path = os.path.join("vault", f"private_key_{keys_date_str}.pem")
         public_key_path = os.path.join("vault", f"public_key_{keys_date_str}.pem")
 
+        # Load the encrypted AES key
+        with open(encrypted_key_file, 'rb') as f:
+            encrypted_aes_key = f.read()
+        logger.info(f"Encrypted AES key loaded from: {encrypted_key_file}")
 
-        # Carga la clave AES cifrada
-        try:
-            with open(encrypted_key_file, 'rb') as f:
-                encrypted_aes_key = f.read()
-            logger.info(f"Clave AES cifrada cargada desde: {encrypted_key_file}")
-        except FileNotFoundError:
-            logger.error(f"Error: El archivo {encrypted_key_file} no existe.")
-            return
+        # Load the checksum
+        with open(checksum_file, 'r') as f:
+            original_checksum = f.read().strip()
+        logger.info(f"Checksum loaded from: {checksum_file}")
 
-        # Carga el checksum
-        try:
-            with open(checksum_file, 'r') as f:
-                original_checksum = f.read().strip()
-            logger.info(f"Checksum cargado desde: {checksum_file}")
-        except FileNotFoundError:
-            logger.error(f"Error: El archivo {checksum_file} no existe.")
-            return
-
-        # Inicializa el descifrado RSA
+        # Initialize RSA decryption
         rsa_encryption = RSAEncryption(
             private_key_path=private_key_path,
             public_key_path=public_key_path,
             private_key_password=password
         )
 
-        # Descifra la clave AES
+        # Decrypt the AES key
         aes_key = rsa_encryption.decrypt_key(encrypted_aes_key)
-        logger.info("Clave AES descifrada exitosamente.")
+        logger.info("AES key successfully decrypted.")
 
-        # Descifra el archivo cifrado
+        # Decrypt the encrypted file
         AESEncryption.decrypt_file(encrypted_file, aes_key)
-        logger.info(f"Archivo cifrado descifrado: {encrypted_file}")
+        logger.info(f"Encrypted file decrypted: {encrypted_file}")
 
-        # Elimina la extensión '.enc' para obtener el archivo ZIP descifrado
+        # Remove the '.enc' extension to get the decrypted ZIP file
         decrypted_file = encrypted_file[:-4]
 
-        # Verifica el checksum del archivo descifrado
+        # Verify the checksum of the decrypted file
         decrypted_checksum = FileChecksum.generate_checksum(decrypted_file)
         if decrypted_checksum == original_checksum:
-            logger.info("Verificación de checksum pasada.")
+            logger.info("Checksum verification passed.")
         else:
-            logger.error("La verificación de checksum falló.")
+            logger.error("Checksum verification failed.")
             return
 
-        # Descomprime el archivo ZIP descifrado en una carpeta llamada 'data_{date_str}'
-        output_folder = f"data_{data_date_str}"
-        if os.path.exists(output_folder):
-          logger.warning(f"La carpeta de salida '{output_folder}' ya existe. Eliminándola para evitar conflictos.")
-          import shutil
-          shutil.rmtree(output_folder)
+        # Decompress the decrypted ZIP file into a folder
+        output_folder = f"{decrypt_date_str}_data_{data_date_str}"
         decompress_folder(decrypted_file, output_folder)
-        logger.info(f"Archivo descifrado descomprimido en la carpeta: {output_folder}")
+        logger.info(f"Decrypted file decompressed into folder: {output_folder}")
 
-        # Elimina el archivo ZIP descifrado intermedio
+        # Remove the intermediate decrypted ZIP file
         os.remove(decrypted_file)
-        logger.info(f"Archivo ZIP descifrado intermedio eliminado: {decrypted_file}")
+        logger.info(f"Intermediate decrypted ZIP file removed: {decrypted_file}")
 
-        # Limpia los archivos .pem extraídos
+        # Clean up extracted .pem files
         cleanup_pem_files("vault")
-        logger.info("Archivos .pem extraídos limpiados.")
+        logger.info("Extracted .pem files cleaned up.")
 
-      except Exception as e:
-          logger.exception("Ocurrió un error durante el proceso de descifrado.")
-          print(f"Ocurrió un error: {e}")
+    except Exception as e:
+        logger.exception("An error occurred during the decryption process.")
+        print(f"An error occurred: {e}")
 
 
 if __name__ == "__main__":

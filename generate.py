@@ -149,7 +149,7 @@ def main():
     """Main function to generate, save, and securely store RSA keys."""
     try:
         # Generate a timestamp for file naming
-        date_str = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
+        generate_date_str = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
 
         # Prompt user for a password to encrypt the private key and archive
         password = prompt_password()
@@ -163,10 +163,10 @@ def main():
         # Generate RSA keys
         key_generator = RSAKeyGenerator()
         key_generator.generate_keys()
-        private_key_path, public_key_path = key_generator.save_keys(password, date_str, hint)
+        private_key_path, public_key_path = key_generator.save_keys(password, generate_date_str, hint)
 
         # Securely store keys in an encrypted compressed file
-        archive_name = f"{hint}_keys_{date_str}.zip"
+        archive_name = f"{generate_date_str}_{hint}_keys.zip"
         secure_storage = SecureKeyStorage(archive_name=archive_name)
         archive_path = secure_storage.compress_and_encrypt(
             [private_key_path, public_key_path],
