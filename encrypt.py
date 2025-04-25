@@ -121,7 +121,7 @@ def cleanup_pem_files(extract_to="vault"):
     logger.info("Cleanup of .pem files completed.")
 
 
-def find_latest_zip_file(directory="vault", pattern=r'.*_keys_\d{2}_\d{2}_\d{4}_\d{2}_\d{2}_\d{2}\.zip'):
+def find_latest_zip_file(directory="vault", pattern=r'\d{2}_\d{2}_\d{4}_\d{2}_\d{2}_\d{2}_[a-zA-Z0-9]+_keys\.zip'):
     """Find the latest .zip file in the specified directory based on the timestamp in the filename."""
     zip_files = [f for f in os.listdir(directory) if re.match(pattern, f)]
     if not zip_files:
