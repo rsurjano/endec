@@ -142,8 +142,8 @@ def find_latest_pem_date_str(directory="vault", pattern=r'(private_key|public_ke
     date_str = re.search(pattern, latest_pem).group(2)
     logger.info(f"Latest .pem file date_str found: {date_str}")
     return date_str
-class FolderChecksum:
 
+class FolderChecksum:
     """Handles checksum generation and validation for folders."""
 
     @staticmethod
