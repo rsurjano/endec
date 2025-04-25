@@ -20,6 +20,7 @@ The primary goal of this project is to provide a **secure and reliable mechanism
 - **Key Management**: Generates and securely stores RSA public/private key pairs in encrypted archives.
 - **Decryption**: Decrypts and decompresses encrypted files back into their original form.
 - **Hook Integration**: Automatically runs `hook.py` after encryption to perform additional tasks like copying files.
+- **Git Integration**: Automatically pulls the latest changes from the remote repository before execution.
 - **Logging**: Detailed logs for all operations are stored in `project.log`.
 
 ---
