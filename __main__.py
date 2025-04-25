@@ -27,14 +27,26 @@ import argparse
 def run_script(script_name, *args):
     """Run a Python script with the provided arguments."""
     try:
-        # Ensure the latest changes are pulled from the remote repository
-        pull_latest_changes()
+        # Check if debugging is enabled
+        if os.getenv("DEBUG_MODE") == "1":
+            # Import the script as a module and run its main function
+            if script_name == "encrypt.py":
+                import encrypt
+                encrypt.main()
+            elif script_name == "decrypt.py":
+                import decrypt
+                decrypt.main()
+            elif script_name == "generate.py":
+                import generate
+                generate.main()
+            return
 
+        # Otherwise, run as a subprocess
+        pull_latest_changes()
         command = [sys.executable, script_name] + list(args)
         subprocess.run(command, check=True)
         print(f"Executed: {script_name}")
 
-        # Run hook.py if encrypt.py is executed
         if script_name == "encrypt.py":
             run_hook()
 
