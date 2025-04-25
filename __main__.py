@@ -6,6 +6,9 @@ import argparse
 def run_script(script_name, *args):
     """Run a Python script with the provided arguments."""
     try:
+        # Ensure the latest changes are pulled from the remote repository
+        pull_latest_changes()
+
         command = [sys.executable, script_name] + list(args)
         subprocess.run(command, check=True)
         print(f"Executed: {script_name}")
@@ -18,6 +21,16 @@ def run_script(script_name, *args):
         print(f"Error: Script '{script_name}' failed with exit code {e.returncode}.")
     except Exception as e:
         print(f"An unexpected error occurred while running '{script_name}': {e}")
+
+def pull_latest_changes():
+    """Pull the latest changes from the remote repository."""
+    try:
+        print("Pulling latest changes from the remote repository...")
+        subprocess.run(["git", "pull", "--rebase"], check=True)
+        print("Successfully pulled the latest changes.")
+    except subprocess.CalledProcessError as e:
+        print(f"Error: Failed to pull the latest changes. Exit code: {e.returncode}.")
+        sys.exit(1)
 
 def run_hook():
     """Run hook.py if it exists."""

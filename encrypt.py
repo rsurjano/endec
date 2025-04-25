@@ -70,8 +70,8 @@ def extract_pem_files(zip_path, extract_to="vault", password=None):
     os.makedirs(extract_to, exist_ok=True)
     try:
         if not password:
-            logger.error("Password cannot be empty. Exiting.")
-            print("Password cannot be empty. Exiting.")
+            logger.error("Password cannot be empty.")
+            print("Password cannot be empty. Please try again.")
             return False
         logger.info(f"Attempting to extract .pem files from '{zip_path}'...")
         with pyzipper.AESZipFile(zip_path, 'r') as zip_ref:
@@ -132,9 +132,11 @@ def main():
         zip_path = find_latest_zip_file()
         extract_to = "vault"
 
-        # Extract .pem files from the encrypted .zip file
-        if not extract_pem_files(zip_path, extract_to, password):
-            return
+        # Keep asking for the password until extraction succeeds
+        while True:
+            password = getpass.getpass("Enter the password for the .zip file and private key: ")
+            if extract_pem_files(zip_path, extract_to, password):
+                break
 
         # Find the latest date_str from the extracted .pem files
         pem_date_str = find_latest_pem_date_str(extract_to)
