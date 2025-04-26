@@ -63,7 +63,7 @@ def find_latest_file(directory, pattern):
     return os.path.join(directory, latest_file)
 
 
-def decrypt():
+def main():
     try:
         # Generate a timestamp for file naming
         decrypt_date_str = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
@@ -76,13 +76,20 @@ def decrypt():
         # Extract the date string from the data file name
         data_date_str = re.search(r'(\d{2}_\d{2}_\d{4}_\d{2}_\d{2}_\d{2})_data', encrypted_file).group(1)
 
-        # Find the latest keys file
-        keys_pattern = r'\d{2}_\d{2}_\d{4}_\d{2}_\d{2}_\d{2}_keys\.zip'
+        # Find the latest keys file with a dynamic word
+        keys_pattern = r'\d{2}_\d{2}_\d{4}_\d{2}_\d{2}_\d{2}_[a-zA-Z0-9]+_keys\.zip'
         keys_zip_file = find_latest_file("vault", keys_pattern)
         logger.info(f"Latest keys file identified: {keys_zip_file}")
 
-        # Extract the date string from the keys file name
-        keys_date_str = re.search(r'(\d{2}_\d{2}_\d{4}_\d{2}_\d{2}_\d{2})_keys', keys_zip_file).group(1)
+        # Extract the date string and dynamic word from the keys file name
+        keys_match = re.search(r'(\d{2}_\d{2}_\d{4}_\d{2}_\d{2}_\d{2})_([a-zA-Z0-9]+)_keys', keys_zip_file)
+        if keys_match:
+            keys_date_str = keys_match.group(1)
+            dynamic_word = keys_match.group(2)
+            logger.info(f"Extracted date: {keys_date_str}, dynamic word: {dynamic_word}")
+        else:
+            logger.error("Failed to extract date and dynamic word from keys file name.")
+            raise ValueError("Invalid keys file name format.")
 
         # Define related paths
         encrypted_key_file = os.path.join("vault", f'{data_date_str}_encrypted_aes_key.bin')
@@ -156,4 +163,4 @@ def decrypt():
 
 
 if __name__ == "__main__":
-    decrypt()
+    main()
