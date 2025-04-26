@@ -59,7 +59,6 @@ def run_script(script_name, *args):
         else:
             print(f"Script '{script_name}' exited with code {result.returncode}: An unexpected error occurred.")
 
-
     except subprocess.CalledProcessError as e:
         print(f"Error: Script '{script_name}' failed with exit code {e.returncode}.")
     except Exception as e:

@@ -195,7 +195,7 @@ def main():
             if FolderChecksum.validate_folder_checksum(folder_path, latest_hash_file):
                 logger.info("Folder checksum matches the stored hash. No changes detected. Exiting script.")
                 print("No changes detected in the folder. Exiting script.")
-                sys.exit(0)  # Exit the script cleanly
+                sys.exit(1)  # Exit the script no changes detected
             else:
                 logger.info("Folder checksum mismatch. Proceeding with encryption...")
         else:
