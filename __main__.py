@@ -44,11 +44,21 @@ def run_script(script_name, *args):
         # Otherwise, run as a subprocess
         pull_latest_changes()
         command = [sys.executable, script_name] + list(args)
-        subprocess.run(command, check=True)
+        result = subprocess.run(command, check=False)  # Allow non-zero exit codes
         print(f"Executed: {script_name}")
 
-        if script_name == "encrypt.py":
-            run_hook()
+        # Handle return codes for all scripts
+        if result.returncode == 0:
+            print(f"Script '{script_name}' executed successfully.")
+            if script_name == "encrypt.py":
+                run_hook()  # Only run the hook for encrypt.py if it succeeds
+        elif result.returncode == 1:
+            print(f"Script '{script_name}' exited with code 1: No changes detected or user aborted.")
+        elif result.returncode == 2:
+            print(f"Script '{script_name}' exited with code 2: Invalid input or configuration error.")
+        else:
+            print(f"Script '{script_name}' exited with code {result.returncode}: An unexpected error occurred.")
+
 
     except subprocess.CalledProcessError as e:
         print(f"Error: Script '{script_name}' failed with exit code {e.returncode}.")
